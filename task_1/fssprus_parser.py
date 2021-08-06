@@ -1,0 +1,217 @@
+# TODO сделать парсер через селениум, через обычные реквесты форбидден 403
+import multiprocessing
+import random
+import sys
+import time
+
+from bs4 import BeautifulSoup
+from fake_useragent import UserAgent
+from selenium import webdriver
+from selenium.common.exceptions import TimeoutException
+from selenium.webdriver.chrome.options import Options as ChromeOptions
+from selenium.webdriver.firefox.options import Options as FirefoxOptions
+from webdriver_manager.chrome import ChromeDriverManager
+from webdriver_manager.firefox import GeckoDriverManager
+
+from utility.paths import get_project_root_path
+from utility.proxy.proxy import parse, random_proxy
+from utility.user_agent import save_user_agent, get_user_agent
+
+
+class ParserFSSP:
+    site_url = 'https://fssp.gov.ru/iss/ip'
+    user_agent = None
+    proxy_str = None
+
+    def __init__(self, proxy=None):
+
+        driver_name_list = ['chrome', 'firefox']
+        # выбираем браузер из списка
+        driver_name = random.choice(driver_name_list)
+
+        # user_agent
+        print('get user_agent...')
+        try:
+            self.user_agent = UserAgent(cache=False, use_cache_server=False).random
+            # сейвим юзер агента чтобы в случае превышения лимита обращений
+            # к API либы webdriver_manager забирать уже записанные в json
+            save_user_agent(self.user_agent)
+        except ValueError:
+            print('value_err')
+            self.user_agent = get_user_agent()
+        except Exception:
+            print('er_err')
+            self.user_agent = get_user_agent()
+
+        print('user_agent: ', self.user_agent)
+
+        # proxy
+        if not proxy:
+            print('get proxy...')
+            self.proxy_str = random_proxy()
+            print('proxy: ', self.proxy_str)
+            proxy = parse(self.proxy_str).proxy_signature()
+        else:
+            self.proxy_str = proxy.__str__()
+            proxy = proxy.proxy_signature()
+
+        if driver_name == 'chrome':
+            chrome_options = ChromeOptions()
+            # скрывает окно браузера
+            # options.add_argument(f'--headless')
+            # изменяет размер окна браузера
+            chrome_options.add_argument(f'--window-size=800,600')
+            chrome_options.add_argument("--incognito")
+            # вырубаем палево с инфой что мы webdriver
+            chrome_options.add_argument('--disable-blink-features=AutomationControlled')
+            # user-agent
+            if self.user_agent:
+                chrome_options.add_argument(f'user-agent={self.user_agent}')
+            # headless mode
+            # chrome_options.headless = True
+
+            # chrome_options.add_experimental_option("mobileEmulation",
+            #                                        {"deviceName": "Galaxy S5"})  # or whatever
+
+            if proxy:
+                chrome_options.add_argument(f'--proxy-server={proxy}')
+
+            try:
+                driver = webdriver.Chrome(executable_path=ChromeDriverManager(cache_valid_range=14).install(),
+                                          options=chrome_options)
+            except ValueError:
+                driver = webdriver.Chrome(executable_path=f'{get_project_root_path()}/drivers/chromedriver.exe',
+                                          options=chrome_options)
+        else:
+            firefox_profile = webdriver.FirefoxProfile()
+            if self.user_agent:
+                # меняем user-agent, можно через FirefoxOptions если ЧЕ
+                firefox_profile.set_preference('general.useragent.override', self.user_agent)
+            firefox_profile.set_preference('dom.file.createInChild', True)
+
+            # proxy
+            # firefox_profile.set_preference("network.proxy.type", 1)
+            # firefox_profile.set_preference("network.proxy.http", proxy)
+            # firefox_profile.set_preference("network.proxy.http_port", port)
+            # firefox_profile.set_preference("network.proxy.ssl", proxy)
+            # firefox_profile.set_preference("network.proxy.ssl_port", port)
+
+            firefox_profile.set_preference("privacy.clearOnShutdown.offlineApps", True)
+            firefox_profile.set_preference("privacy.clearOnShutdown.passwords", True)
+            firefox_profile.set_preference("privacy.clearOnShutdown.siteSettings", True)
+            firefox_profile.set_preference("privacy.sanitize.sanitizeOnShutdown", True)
+            firefox_profile.set_preference("network.cookie.lifetimePolicy", 2)
+            firefox_profile.set_preference("network.dns.disablePrefetch", True)
+            firefox_profile.set_preference("network.http.sendRefererHeader", 0)
+            # firefox_profile.set_preference("javascript.enabled", False)
+
+            firefox_profile.update_preferences()
+
+            if proxy:
+                firefox_capabilities = webdriver.DesiredCapabilities.FIREFOX
+                firefox_capabilities['marionette'] = True
+
+                firefox_capabilities['proxy'] = {
+                    'proxyType': 'MANUAL',
+                    'httpProxy': proxy,
+                    'ftpProxy': proxy,
+                    'sslProxy': proxy
+                }
+            else:
+                firefox_capabilities = None
+
+            firefox_options = FirefoxOptions()
+            # размер окна браузера
+            firefox_options.add_argument('--width=800')
+            firefox_options.add_argument('--height=600')
+            # вырубаем палево с инфой что мы webdriver
+            firefox_options.set_preference('dom.webdriver.enabled', False)
+            # headless mode
+            # firefox_options.headless = True
+
+            # инициализируем firefox
+            try:
+                driver = webdriver.Firefox(firefox_profile=firefox_profile,
+                                           capabilities=firefox_capabilities,
+                                           executable_path=GeckoDriverManager(cache_valid_range=14).install()   ,
+                                           options=firefox_options,
+                                           service_log_path=f'{get_project_root_path()}'
+                                                            f'/logs/geckodriver.log')
+            except ValueError:
+                driver = webdriver.Firefox(firefox_profile=firefox_profile,
+                                           capabilities=firefox_capabilities,
+                                           executable_path=f'{get_project_root_path()}/drivers/geckodriver.exe',
+                                           options=firefox_options,
+                                           service_log_path=f'{get_project_root_path()}'
+                                                            f'/logs/geckodriver.log')
+
+        driver.delete_all_cookies()
+
+        self.driver = driver
+
+    # метод для закрытия браузера
+    def close_driver(self):
+        self.driver.close()
+        self.driver.quit()
+
+    def wait_and_close_driver(self):
+        input('Press enter if you want to stop browser right now')
+        self.close_driver()
+        sys.exit()
+
+    # чтобы протестить прокси
+    def get_site_title(self):
+        self.driver.set_page_load_timeout(10)
+
+        try:
+            self.driver.get(self.site_url)
+        except TimeoutException:
+            print('GET TIMEOUT')
+
+        title = self.driver.title
+
+        self.close_driver()
+
+        return title
+
+    def check_person(self, first_name, second_name, third_name, birth_date):
+
+        self.driver.get(self.site_url)
+
+        soup = BeautifulSoup(self.driver.page_source, "html.parser")
+        result_frame = soup.find("div", class_="results-frame")
+        table_result = result_frame.find("tbody")
+
+        if table_result is None:
+            info_result = result_frame.find("div")
+            return info_result
+        else:
+            return table_result
+
+
+def parse_massive():
+
+    list_org = ParserFSSP()
+
+    cursor = list_org.con.cursor()
+
+    cursor.execute('SELECT ogrn FROM companies LIMIT 10')
+    ogrn_list = cursor.fetchall()
+
+    ogrn_list = [ogrn[0] for ogrn in ogrn_list]
+    print(ogrn_list)
+
+    pool = multiprocessing.Pool(processes=4)
+
+    pool_res = pool.map(list_org.update_company_by_ogrn, ogrn_list)
+
+    list_org.con.commit()
+
+    print(pool_res)
+
+
+if __name__ == '__main__':
+    rus_profile = ParserFSSP()
+
+    # res = rus_profile.parse_page('https://www.rusprofile.ru/codes/430000/3760')
+    # print(res)

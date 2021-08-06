@@ -2,6 +2,7 @@ import pandas as pd
 import win32com.client
 
 
+# не юзаем эту либу
 def generate_excel():
     df = pd.DataFrame({'Фамилия': ['fuck', 'skasd'],
                        'Имя': ['Вася', 'Леха'],
@@ -11,6 +12,7 @@ def generate_excel():
     df.to_excel('./template_1.xlsx', sheet_name='Первый', index=False)
 
 
+# не юзаем эту либу
 def read_excel():
     people_list = pd.read_excel('./template_1.xlsx', index_col='Фамилия')
     print(people_list.head())
@@ -30,4 +32,6 @@ def excel_pywin32():
 if __name__ == '__main__':
     # generate_excel()
 
-    read_excel()
+    # read_excel()
+
+    excel_pywin32()
