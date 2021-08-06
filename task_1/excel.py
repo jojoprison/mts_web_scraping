@@ -1,3 +1,7 @@
+import io
+import os
+import sys
+
 import pandas as pd
 import win32com.client
 
@@ -22,10 +26,16 @@ def excel_pywin32():
     excel = win32com.client.Dispatch('Excel.Application')
     excel.Visible = True
 
-    file = 'path_to_file'
-    workbook = excel.Workbook.Open(file)
+    current_path = os.getcwd()
 
-    _ = input('Press enter to close Excel')
+    excel_file = os.path.join(current_path, 'persons.xlsx')
+    wb_data = excel.Workbooks.Open(excel_file)
+
+    first = wb_data.Worksheets("Лист1").Range("A2")
+    print(first)
+
+    wb_data.Close(True)
+
     excel.Quit()
 
 
