@@ -7,8 +7,9 @@ import time
 from bs4 import BeautifulSoup
 from fake_useragent import UserAgent
 from selenium import webdriver
-from selenium.common.exceptions import TimeoutException
+from selenium.common.exceptions import TimeoutException, SessionNotCreatedException
 from selenium.webdriver.chrome.options import Options as ChromeOptions
+from selenium.webdriver.common.by import By
 from selenium.webdriver.firefox.options import Options as FirefoxOptions
 from webdriver_manager.chrome import ChromeDriverManager
 from webdriver_manager.firefox import GeckoDriverManager
@@ -16,6 +17,7 @@ from webdriver_manager.firefox import GeckoDriverManager
 from utility.paths import get_project_root_path
 from utility.proxy.proxy import parse, random_proxy
 from utility.user_agent import save_user_agent, get_user_agent
+from excel import excel_pywin32
 
 
 class ParserFSSP:
@@ -27,7 +29,8 @@ class ParserFSSP:
 
         driver_name_list = ['chrome', 'firefox']
         # выбираем браузер из списка
-        driver_name = random.choice(driver_name_list)
+        # driver_name = random.choice(driver_name_list)
+        driver_name = 'chrome'
 
         # user_agent
         print('get user_agent...')
@@ -46,14 +49,14 @@ class ParserFSSP:
         print('user_agent: ', self.user_agent)
 
         # proxy
-        if not proxy:
-            print('get proxy...')
-            self.proxy_str = random_proxy()
-            print('proxy: ', self.proxy_str)
-            proxy = parse(self.proxy_str).proxy_signature()
-        else:
-            self.proxy_str = proxy.__str__()
-            proxy = proxy.proxy_signature()
+        # if not proxy:
+        #     print('get proxy...')
+        #     self.proxy_str = random_proxy()
+        #     print('proxy: ', self.proxy_str)
+        #     proxy = parse(self.proxy_str).proxy_signature()
+        # else:
+        #     self.proxy_str = proxy.__str__()
+        #     proxy = proxy.proxy_signature()
 
         if driver_name == 'chrome':
             chrome_options = ChromeOptions()
@@ -79,7 +82,7 @@ class ParserFSSP:
             try:
                 driver = webdriver.Chrome(executable_path=ChromeDriverManager(cache_valid_range=14).install(),
                                           options=chrome_options)
-            except ValueError:
+            except (ValueError, SessionNotCreatedException):
                 driver = webdriver.Chrome(executable_path=f'{get_project_root_path()}/drivers/chromedriver.exe',
                                           options=chrome_options)
         else:
@@ -137,7 +140,7 @@ class ParserFSSP:
                                            options=firefox_options,
                                            service_log_path=f'{get_project_root_path()}'
                                                             f'/logs/geckodriver.log')
-            except ValueError:
+            except (ValueError, SessionNotCreatedException):
                 driver = webdriver.Firefox(firefox_profile=firefox_profile,
                                            capabilities=firefox_capabilities,
                                            executable_path=f'{get_project_root_path()}/drivers/geckodriver.exe',
@@ -174,19 +177,38 @@ class ParserFSSP:
 
         return title
 
-    def check_person(self, first_name, second_name, third_name, birth_date):
+    def check_person(self, second_name, first_name, third_name, birth_date):
 
         self.driver.get(self.site_url)
 
-        soup = BeautifulSoup(self.driver.page_source, "html.parser")
-        result_frame = soup.find("div", class_="results-frame")
-        table_result = result_frame.find("tbody")
+        territory_select = self.driver.find_element_by_class_name('chosen-search-input')
+        territory_select.click()
 
-        if table_result is None:
-            info_result = result_frame.find("div")
-            return info_result
-        else:
-            return table_result
+        territory_option = territory_select.find_element(
+            # это владимирская обл
+            By.CSS_SELECTOR, '[data-option-array-index="7"]')
+        territory_option.click()
+
+        time.sleep(1)
+
+        first_name_input = self.driver.find_element_by_id('input01')
+        first_name_input.send_keys(second_name)
+
+        second_name_input = self.driver.find_element_by_id('input02')
+        second_name_input.send_keys(first_name)
+
+        find_btn = self.driver.find_element_by_id('btn-sbm')
+        find_btn.send_keys('\ue007')
+
+        time.sleep(15)
+
+        soup = BeautifulSoup(self.driver.page_source, "html.parser")
+        table = soup.find("tbody")
+
+        tr_list = table.find_all('tr')
+        print(tr_list)
+        del tr_list[0]
+        print(tr_list)
 
 
 def parse_massive():
@@ -211,7 +233,12 @@ def parse_massive():
 
 
 if __name__ == '__main__':
-    rus_profile = ParserFSSP()
+    parser = ParserFSSP()
+
+    persons = excel_pywin32()
+
+    parser.check_person(persons[0].get('first_name'), persons[0].get('second_name'),
+                        persons[0].get('third_name'), persons[0].get('birth_date'))
 
     # res = rus_profile.parse_page('https://www.rusprofile.ru/codes/430000/3760')
     # print(res)

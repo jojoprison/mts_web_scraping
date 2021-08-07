@@ -30,13 +30,29 @@ def excel_pywin32():
 
     excel_file = os.path.join(current_path, 'persons.xlsx')
     wb_data = excel.Workbooks.Open(excel_file)
+    ws = wb_data.Worksheets('Лист1')
 
-    first = wb_data.Worksheets("Лист1").Range("A2")
-    print(first)
+    # lastCol = ws.UsedRange.Columns.Count
+    last_row = ws.UsedRange.Rows.Count
+
+    persons = list()
+
+    for i in range(2, last_row + 1):
+
+        person = dict()
+
+        person['second_name'] = str(ws.Range("A" + str(i)))
+        person['first_name'] = str(ws.Range("B" + str(i)))
+        person['third_name'] = str(ws.Range("C" + str(i)))
+        person['birth_date'] = str(ws.Range("D" + str(i)))
+
+        persons.append(person)
 
     wb_data.Close(True)
 
     excel.Quit()
+
+    return persons
 
 
 if __name__ == '__main__':

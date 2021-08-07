@@ -3,8 +3,7 @@ import random
 
 from utility.paths import get_project_root_path
 
-USER_AGENT_JSON_PATH = f'{get_project_root_path()}/rus_companies/' \
-                       f'parsed_sites/list_org/user_agents.json'
+USER_AGENT_JSON_PATH = f'{get_project_root_path()}/utility/user_agents.json'
 
 
 def save_user_agent(user_agent):

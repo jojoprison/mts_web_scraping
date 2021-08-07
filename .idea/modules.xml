@@ -2,6 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
+      <module fileurl="file://$PROJECT_DIR$/../OSP_parser/.idea/OSP_parser.iml" filepath="$PROJECT_DIR$/../OSP_parser/.idea/OSP_parser.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/mts_web_scraping.iml" filepath="$PROJECT_DIR$/.idea/mts_web_scraping.iml" />
     </modules>
   </component>
