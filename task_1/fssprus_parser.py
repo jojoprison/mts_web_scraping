@@ -1,23 +1,24 @@
 # TODO сделать парсер через селениум, через обычные реквесты форбидден 403
 import multiprocessing
-import random
 import sys
 import time
 
 from bs4 import BeautifulSoup
 from fake_useragent import UserAgent
 from selenium import webdriver
-from selenium.common.exceptions import TimeoutException, SessionNotCreatedException
+from selenium.common.exceptions import TimeoutException, SessionNotCreatedException, NoSuchElementException
 from selenium.webdriver.chrome.options import Options as ChromeOptions
 from selenium.webdriver.common.by import By
 from selenium.webdriver.firefox.options import Options as FirefoxOptions
 from webdriver_manager.chrome import ChromeDriverManager
 from webdriver_manager.firefox import GeckoDriverManager
+import requests
 
 from utility.paths import get_project_root_path
 from utility.proxy.proxy import parse, random_proxy
 from utility.user_agent import save_user_agent, get_user_agent
 from excel import excel_pywin32
+from captcha.captcha import solve_captcha, get_captcha_img
 
 
 class ParserFSSP:
@@ -181,13 +182,15 @@ class ParserFSSP:
 
         self.driver.get(self.site_url)
 
-        territory_select = self.driver.find_element_by_class_name('chosen-search-input')
-        territory_select.click()
+        territory_chooser = self.driver.find_element_by_id('region_id_chosen')
+        territory_chooser.click()
 
-        territory_option = territory_select.find_element(
+        territory_li = territory_chooser.find_element(
             # это владимирская обл
-            By.CSS_SELECTOR, '[data-option-array-index="7"]')
-        territory_option.click()
+            # By.CSS_SELECTOR, '[data-option-array-index="7"]')
+            # московская область
+            By.CSS_SELECTOR, '[data-option-array-index="30"]')
+        territory_li.click()
 
         time.sleep(1)
 
@@ -198,9 +201,50 @@ class ParserFSSP:
         second_name_input.send_keys(first_name)
 
         find_btn = self.driver.find_element_by_id('btn-sbm')
+        # имитируем нажатие клавиши ENTER
         find_btn.send_keys('\ue007')
 
-        time.sleep(15)
+        time.sleep(30)
+
+        # проверяем, всплыло ли окно с капчей
+        try:
+            self.driver.find_element_by_id('captcha-popup')
+            captcha_exist = True
+        except NoSuchElementException:
+            captcha_exist = False
+        except Exception as ex:
+            print(ex)
+            captcha_exist = False
+
+        # если надо разгадать капчу
+        # TODO сделать распознавание речи капчи
+        if captcha_exist:
+            # закрываем окно алертов
+            captcha_elem = self.driver.find_element_by_id('capchaVisual')
+
+            # забираем значения аттрибута src у картинки с капчей, чтоб скачать
+            captcha_src = captcha_elem.get_attribute('src')
+            # скачиваем изображение капчи
+            print('download captcha img')
+            get_captcha_img(captcha_src)
+
+            # разгадываем только что скачанную капчу
+            captcha_json = solve_captcha()
+            print(captcha_json)
+            captcha_text = captcha_json['text']
+
+            print('send keys')
+            captcha_text_input = self.driver.find_element_by_id('captcha-popup-code')
+
+            # вбиваем текст капчи посимвольно, чтоб не палиться, будто мы человек
+            for symb in captcha_text:
+                captcha_text_input.send_keys(symb)
+
+            # имитируем нажатие клавиши ENTER
+            print('send enter')
+            captcha_text_input.send_keys('\ue007')
+
+            time.sleep(30)
 
         soup = BeautifulSoup(self.driver.page_source, "html.parser")
         table = soup.find("tbody")
@@ -235,10 +279,11 @@ def parse_massive():
 if __name__ == '__main__':
     parser = ParserFSSP()
 
-    persons = excel_pywin32()
+    # persons = excel_pywin32()
 
-    parser.check_person(persons[0].get('first_name'), persons[0].get('second_name'),
-                        persons[0].get('third_name'), persons[0].get('birth_date'))
+    # parser.check_person(persons[0].get('first_name'), persons[0].get('second_name'),
+    #                     persons[0].get('third_name'), persons[0].get('birth_date'))
 
+    parser.check_person('Иванов', 'Илья', 'Владимирович', '03.05.1981')
     # res = rus_profile.parse_page('https://www.rusprofile.ru/codes/430000/3760')
     # print(res)
