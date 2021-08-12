@@ -1,5 +1,6 @@
 # TODO сделать парсер через селениум, через обычные реквесты форбидден 403
 import multiprocessing
+import random
 import sys
 import time
 
@@ -18,7 +19,7 @@ from utility.paths import get_project_root_path
 from utility.proxy.proxy import parse, random_proxy
 from utility.user_agent import save_user_agent, get_user_agent
 from excel import excel_pywin32
-from captcha.captcha import solve_captcha, get_captcha_img
+from captcha.captcha import solve_captcha, get_captcha_img, save_captcha
 
 
 class ParserFSSP:
@@ -30,8 +31,8 @@ class ParserFSSP:
 
         driver_name_list = ['chrome', 'firefox']
         # выбираем браузер из списка
-        # driver_name = random.choice(driver_name_list)
-        driver_name = 'chrome'
+        driver_name = random.choice(driver_name_list)
+        # driver_name = 'chrome'
 
         # user_agent
         print('get user_agent...')
@@ -186,7 +187,7 @@ class ParserFSSP:
         territory_chooser.click()
 
         territory_li = territory_chooser.find_element(
-            # это владимирская обл
+            # владимирская обл
             # By.CSS_SELECTOR, '[data-option-array-index="7"]')
             # московская область
             By.CSS_SELECTOR, '[data-option-array-index="30"]')
@@ -200,59 +201,147 @@ class ParserFSSP:
         second_name_input = self.driver.find_element_by_id('input02')
         second_name_input.send_keys(first_name)
 
+        # TODO вставить отчество и ДР
+
         find_btn = self.driver.find_element_by_id('btn-sbm')
         # имитируем нажатие клавиши ENTER
         find_btn.send_keys('\ue007')
 
         time.sleep(30)
 
+        # создаем объект пройденной капчи, чтобы после выхода из цикла обозначить ее как решенную УСПЕШНО
+        passed_captcha_json = None
+
         # проверяем, всплыло ли окно с капчей
-        try:
-            self.driver.find_element_by_id('captcha-popup')
-            captcha_exist = True
-        except NoSuchElementException:
-            captcha_exist = False
-        except Exception as ex:
-            print(ex)
-            captcha_exist = False
+        while self.captcha_exist():
+            # не решили предыдущую капчу, ничего не меняем в json, сохраняем как есть на будущее
+            save_captcha(passed_captcha_json)
+            passed_captcha_json = self.overcome_captcha()
 
-        # если надо разгадать капчу
-        # TODO сделать распознавание речи капчи
-        if captcha_exist:
-            # закрываем окно алертов
-            captcha_elem = self.driver.find_element_by_id('capchaVisual')
+        # решили капчу успешно
+        passed_captcha_json['success'] = True
+        save_captcha(passed_captcha_json)
 
-            # забираем значения аттрибута src у картинки с капчей, чтоб скачать
-            captcha_src = captcha_elem.get_attribute('src')
-            # скачиваем изображение капчи
-            print('download captcha img')
-            get_captcha_img(captcha_src)
-
-            # разгадываем только что скачанную капчу
-            captcha_json = solve_captcha()
-            print(captcha_json)
-            captcha_text = captcha_json['text']
-
-            print('send keys')
-            captcha_text_input = self.driver.find_element_by_id('captcha-popup-code')
-
-            # вбиваем текст капчи посимвольно, чтоб не палиться, будто мы человек
-            for symb in captcha_text:
-                captcha_text_input.send_keys(symb)
-
-            # имитируем нажатие клавиши ENTER
-            print('send enter')
-            captcha_text_input.send_keys('\ue007')
-
-            time.sleep(30)
-
+        # будем парсить html супом
         soup = BeautifulSoup(self.driver.page_source, "html.parser")
+        # сразу находим тело таблицы с результатом запроса
         table = soup.find("tbody")
 
+        # собираем с таблицы инфу о всех должниках
         tr_list = table.find_all('tr')
-        print(tr_list)
+        # удаляем заголовки, не понадобятся, один раз их увидеть достаточно
         del tr_list[0]
         print(tr_list)
+
+
+
+        # TODO сделать переключатель страниц внизу
+        self.wait_and_close_driver()
+
+    def captcha_exist(self):
+        try:
+            self.driver.find_element_by_id('captcha-popup')
+            return True
+        except NoSuchElementException:
+            return False
+        except Exception as ex:
+            print(ex)
+            return False
+
+    # преодолеваем капчу
+    def overcome_captcha(self):
+
+        # TODO сделать распознавание речи капчи
+        captcha_elem = self.driver.find_element_by_id('capchaVisual')
+
+        # забираем значения аттрибута src у картинки с капчей, чтоб скачать
+        captcha_src = captcha_elem.get_attribute('src')
+        # скачиваем изображение капчи
+        print('download captcha img')
+        get_captcha_img(captcha_src)
+
+        # разгадываем только что скачанную капчу
+        captcha_json = solve_captcha()
+        print(captcha_json)
+        captcha_text = captcha_json['text']
+
+        print('send keys')
+        captcha_text_input = self.driver.find_element_by_id('captcha-popup-code')
+
+        # вбиваем текст капчи посимвольно, чтоб не палиться, будто мы человек
+        for symb in captcha_text:
+            captcha_text_input.send_keys(symb)
+            time.sleep(1)
+
+        # имитируем нажатие клавиши ENTER
+        print('send enter')
+        captcha_text_input.send_keys('\ue007')
+
+        time.sleep(20)
+
+        return captcha_json
+
+
+# TODO пока сюда, потом в другой файл можно засунуть
+def parse_table(tr_list):
+    pass
+
+
+def parse_tr(tr_elem):
+    # преобразуем полученную строку в суповскую (я для дебага это делаю, мб убрать)
+    tr_elem = BeautifulSoup(tr_elem, 'html.parser')
+
+    # находим все ячейки сразу, будем по ним ходить
+    td_list = tr_elem.find_all('td')
+
+    # сюда будет заносить результат
+    debtor_dict = dict()
+
+    debtor_info = td_list[0]
+    # находим все разделители <br/>, т.к. инфа из первой ячейки разделена именно ими, от них будем вести навигацию
+    br_list = debtor_info.findAll('br')
+    # TODO мб сюда вставить dict для удобства, но запарюсь пока что
+    debtor_dict['name'] = br_list[0].previous.strip()
+    debtor_dict['birth_date'] = br_list[0].next.strip()
+    # заменяем двойные пробелы одинарными
+    debtor_dict['place'] = br_list[1].next.replace('  ', ' ')
+
+    # исполнительное производство
+    enforcement_proceedings = td_list[1]
+    # TODO тут еще в блок try except засунуть над будет
+    br = enforcement_proceedings.find('br')
+    # проверяем, есть ли там графа СД (иногда бывает)
+    if br:
+        # убираем сразу лишние пробелы
+        first_ep = br.previous.strip()
+        second_ep = br.next
+
+        enforcement_proceedings = [first_ep, second_ep]
+    else:
+        enforcement_proceedings = [enforcement_proceedings.text]
+
+    # TODO мб сюда вставить dict для удобства, но запарюсь пока что
+    debtor_dict['enforcement_proceedings'] = enforcement_proceedings
+
+    executive_document_details = td_list[2]
+    # TODO мб сюда вставить dict для удобства, но запарюсь пока что
+    print(executive_document_details)
+
+    ep_end = td_list[3]
+    # причина - статья, часть, пункт основания (ст. %, ч. %, п. %)
+    ep_end_res = {'reason': None, 'date': None}
+
+    # 4 пункт пропускаем - там конпка 'оплатить' на сайте
+    for_what_how_many = td_list[5]
+    fc = {'subject': None, 'amount': None}
+
+    department_of_bailiffs = td_list[6]
+    db = {'name': None, 'address': None}
+
+    bailiff_telephone = td_list[7]
+    bailiff = {'name': None, 'phone': None}
+
+    print(debtor_dict)
 
 
 def parse_massive():
@@ -261,6 +350,7 @@ def parse_massive():
 
     cursor = list_org.con.cursor()
 
+    # TODO подумать, оставлять ли (нужна БД или нет)
     cursor.execute('SELECT ogrn FROM companies LIMIT 10')
     ogrn_list = cursor.fetchall()
 
@@ -277,13 +367,24 @@ def parse_massive():
 
 
 if __name__ == '__main__':
-    parser = ParserFSSP()
+    # parser = ParserFSSP()
 
     # persons = excel_pywin32()
 
     # parser.check_person(persons[0].get('first_name'), persons[0].get('second_name'),
     #                     persons[0].get('third_name'), persons[0].get('birth_date'))
 
-    parser.check_person('Иванов', 'Илья', 'Владимирович', '03.05.1981')
-    # res = rus_profile.parse_page('https://www.rusprofile.ru/codes/430000/3760')
-    # print(res)
+    # parser.check_person('Иванов', 'Илья', 'Владимирович', '03.05.1981')
+
+    tr = '''<tr class="">
+<td class="first">ИВАНОВ ИЛЬЯ ВЛАДИМИРОВИЧ <br/>03.05.1981 <br/>142100,  РОССИЯ,  МОСКОВСКАЯ ОБЛ.,  Г. ПОДОЛЬСК</td>
+<td class="">11057/21/50032-ИП от 01.02.2021 <br/>153243/20/50032-СД</td>
+<td class="">Судебный приказ от 28.04.2018 № 2-565/2018<br/>СУДЕБНЫЙ УЧАСТОК № 190 МИРОВОГО СУДЬИ ПОДОЛЬСКОГО СУДЕБНОГО РАЙОНА МОСКОВСКОЙ ОБЛАСТИ</td>
+<td class="">15.04.2021<br/>ст. 46<br/>ч. 1<br/>п. 3</td>
+<td class=""><script type="text/javascript">window["_ipServices"] = {"receipt":{"title":"Квитанция","hide_title":true,"banner":"form.svg","subtitle":"<br>Квитанция","url":"https://is.fssp.gov.ru/get_receipt/?receipt="},"epgu":{"title":"Оплата через ЕПГУ","hide_title":true,"url":"https://is.fssp.gov.ru/pay/?service=epgu&pay=","banner":"pay_gos.svg","subtitle":"<br>Оплата любыми картами"}};</script></td>
+<td class="">Иные взыскания имущественного характера в пользу физических и юридических лиц<br/></td>
+<td class="">Подольский РОСП ГУФССП России по Московской области<br/>142100, Россия, Московская  обл., , г. Подольск, , ул. Курская, д. 6, , </td>
+<td class="">ЧИСТОБАЕВА С. Х.<br/><b></b></td>
+</tr>'''
+
+    parse_tr(tr)

@@ -1,0 +1,21 @@
+{
+    "captcha_1": null,
+    "captcha_2": {
+        "id": 2,
+        "text": "Жжгр!ж",
+        "success": null,
+        "alternative_text": []
+    },
+    "captcha_3": {
+        "id": 3,
+        "text": "Прив",
+        "success": null,
+        "alternative_text": []
+    },
+    "captcha_4": {
+        "id": 4,
+        "text": "л8ж8т",
+        "success": true,
+        "alternative_text": []
+    }
+}
