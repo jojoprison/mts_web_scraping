@@ -211,27 +211,7 @@ class ParserFSSP:
 
         time.sleep(4)
 
-        # создаем объект пройденной капчи, чтобы после выхода из цикла обозначить ее как решенную УСПЕШНО
-        passed_captcha_json = None
-        # флаг для цикла - понимаем, решаем ли капчу повторно
-        captcha_again = False
-
-        # проверяем, всплыло ли окно с капчей
-        while self.captcha_exist():
-
-            if captcha_again:
-                # не решили предыдущую капчу, обозначаем это в json, сохраняем на будущее
-                passed_captcha_json['success'] = False
-                save_captcha(passed_captcha_json)
-
-            passed_captcha_json = self.overcome_captcha()
-
-            # сразу ставим флаг в значение true, чтоб в случае следующего захода в цикл сохранять капчу
-            captcha_again = True
-
-        # решили капчу успешно
-        passed_captcha_json['success'] = True
-        save_captcha(passed_captcha_json)
+        self.captcha_handler()
 
         parse_page(self.driver.page_source)
 
@@ -242,24 +222,34 @@ class ParserFSSP:
 
             print('found pagination')
 
-            div_pagination = self.driver.find_element_by_class_name('pagination')
-
             count = 2
 
+            # на след страницы надо переходить, только если кнопка с текстом 'Следующая' есть на странице,
+            # на последней она пропадает
             while self.element_exist(By.XPATH, '// a[contains( text(), "Следующая")]'):
+                # через файнд его надо каждый раз заново искать, DOM обновляется
+                div_pagination = self.driver.find_element_by_class_name('pagination')
+
+                # через контейнс находим нужную линку в диве
                 pagination_button_next = div_pagination.find_element_by_xpath(
                     '// a[contains( text(), "Следующая")]')
 
+                # тыкаем, переходим на след страницу
                 pagination_button_next.click()
 
                 time.sleep(3)
 
+                # после перехода на след страницу может вылести капча - ставим ее обработчик
+                self.captcha_handler()
+
                 print('parsing page: ', count)
 
+                # парсим страницу с ИП
                 parse_page(self.driver.page_source)
 
                 count += 1
 
+        # закрывем браузер чтоб избавиться от процесса
         self.wait_and_close_driver()
 
     def element_exist(self, search_by, search_pattern):
@@ -271,6 +261,39 @@ class ParserFSSP:
         except Exception as ex:
             print(ex)
             return False
+
+    # обработчик капчи, ставим в возможных местах возникновения
+    def captcha_handler(self):
+
+        # создаем объект пройденной капчи, чтобы после выхода из цикла обозначить ее как решенную УСПЕШНО
+        passed_captcha_json = dict()
+        # флаг для цикла - понимаем, решаем ли капчу повторно
+        captcha_again = False
+
+        # проверяем, всплыло ли окно с капчей
+        while self.captcha_exist():
+
+            if captcha_again:
+                # не решили предыдущую капчу, обозначаем это в json, сохраняем на будущее
+                passed_captcha_json['success'] = False
+                # сохраняем старый, чтоб не потерять, потом будет юзать)
+                save_captcha(passed_captcha_json)
+
+            # обновляем словарь с инфой о капче, пытаясь преодолеть ее
+            passed_captcha_json = self.overcome_captcha()
+
+            # сразу ставим флаг в значение true, чтоб в случае следующего захода в цикл сохранять
+            # старый словарь с инфой о капче
+            captcha_again = True
+
+        # если там вообще чет есть
+        if passed_captcha_json:
+            # решили капчу успешно
+            passed_captcha_json['success'] = True
+            # сохраняем о ней инфу
+            save_captcha(passed_captcha_json)
+
+        return True
 
     def captcha_exist(self):
         return self.element_exist(By.ID, 'captcha-popup')
@@ -380,10 +403,17 @@ def parse_tr(tr_elem):
     # находим все разделители <br/>, т.к. инфа из первой ячейки разделена именно ими, от них будем вести навигацию
     br_list = debtor_info.findAll('br')
     # dict с инфой о должнике
+
+    # при существовании второго разделителя br мы точно знаем, что у должника указан адрес в первой ячейке
+    if len(br_list) > 1:
+        place = br_list[1].next.replace('  ', ' ')
+    else:
+        place = None
+
     ep_res_dict['debtor'] = {'name': br_list[0].previous.strip(),
                              'birth_date': br_list[0].next.strip(),
                              # заменяем двойные пробелы одинарными
-                             'place': br_list[1].next.replace('  ', ' ')}
+                             'place': place}
 
     # исполнительное производство
     enforcement_proceedings = td_list[1]
