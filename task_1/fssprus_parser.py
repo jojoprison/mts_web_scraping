@@ -18,7 +18,7 @@ import requests
 from utility.paths import get_project_root_path
 from utility.proxy.proxy import parse, random_proxy
 from utility.user_agent import save_user_agent, get_user_agent
-from excel import excel_pywin32
+from excel import ffsp_get_debtors_to_check
 from captcha.captcha import solve_captcha, get_captcha_img, save_captcha
 
 
@@ -402,7 +402,6 @@ def parse_tr(tr_elem):
     debtor_info = td_list[0]
     # находим все разделители <br/>, т.к. инфа из первой ячейки разделена именно ими, от них будем вести навигацию
     br_list = debtor_info.findAll('br')
-    # dict с инфой о должнике
 
     # при существовании второго разделителя br мы точно знаем, что у должника указан адрес в первой ячейке
     if len(br_list) > 1:
@@ -410,10 +409,10 @@ def parse_tr(tr_elem):
     else:
         place = None
 
-    ep_res_dict['debtor'] = {'name': br_list[0].previous.strip(),
-                             'birth_date': br_list[0].next.strip(),
-                             # заменяем двойные пробелы одинарными
-                             'place': place}
+    ep_res_dict['debtor_info'] = {'name': br_list[0].previous.strip(),
+                                  'birth_date': br_list[0].next.strip(),
+                                  # заменяем двойные пробелы одинарными
+                                  'place': place}
 
     # исполнительное производство
     enforcement_proceedings = td_list[1]
