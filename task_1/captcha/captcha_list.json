@@ -53,5 +53,521 @@
         "text": "жсмпм",
         "success": true,
         "alternative_text": []
+    },
+    "captcha_11": {
+        "id": 11,
+        "text": "пб8Мл",
+        "success": true,
+        "alternative_text": []
+    },
+    "captcha_12": {
+        "id": 12,
+        "text": "п722ж",
+        "success": true,
+        "alternative_text": []
+    },
+    "captcha_13": {
+        "id": 13,
+        "text": "лгМс4",
+        "success": true,
+        "alternative_text": []
+    },
+    "captcha_14": {
+        "id": 14,
+        "text": "ПслПр",
+        "success": true,
+        "alternative_text": []
+    },
+    "captcha_15": {
+        "id": 15,
+        "text": "двабв",
+        "success": null,
+        "alternative_text": []
+    },
+    "captcha_16": {
+        "id": 16,
+        "text": "\f",
+        "success": null,
+        "alternative_text": []
+    },
+    "captcha_17": {
+        "id": 17,
+        "text": "Жг9176",
+        "success": null,
+        "alternative_text": []
+    },
+    "captcha_18": {
+        "id": 18,
+        "text": "пВСрРВ",
+        "success": null,
+        "alternative_text": []
+    },
+    "captcha_19": {
+        "id": 19,
+        "text": "жлрбЖ",
+        "success": null,
+        "alternative_text": []
+    },
+    "captcha_20": {
+        "id": 20,
+        "text": "пдима",
+        "success": null,
+        "alternative_text": []
+    },
+    "captcha_21": {
+        "id": 21,
+        "text": "ложвя",
+        "success": null,
+        "alternative_text": []
+    },
+    "captcha_22": {
+        "id": 22,
+        "text": "дба1т",
+        "success": null,
+        "alternative_text": []
+    },
+    "captcha_23": {
+        "id": 23,
+        "text": "д5Жаб",
+        "success": null,
+        "alternative_text": []
+    },
+    "captcha_24": {
+        "id": 24,
+        "text": "Жжл5лб",
+        "success": null,
+        "alternative_text": []
+    },
+    "captcha_25": {
+        "id": 25,
+        "text": "пжкбр",
+        "success": true,
+        "alternative_text": []
+    },
+    "captcha_26": {
+        "id": 26,
+        "text": "ПР2хжр",
+        "success": null,
+        "alternative_text": []
+    },
+    "captcha_27": {
+        "id": 27,
+        "text": "ПЛл9",
+        "success": null,
+        "alternative_text": []
+    },
+    "captcha_28": {
+        "id": 28,
+        "text": "л@пг9",
+        "success": null,
+        "alternative_text": []
+    },
+    "captcha_29": {
+        "id": 29,
+        "text": "ж2апрЕ",
+        "success": null,
+        "alternative_text": []
+    },
+    "captcha_30": {
+        "id": 30,
+        "text": "лв2н6",
+        "success": null,
+        "alternative_text": []
+    },
+    "captcha_31": {
+        "id": 31,
+        "text": "пгТеа",
+        "success": null,
+        "alternative_text": []
+    },
+    "captcha_32": {
+        "id": 32,
+        "text": "667А",
+        "success": null,
+        "alternative_text": []
+    },
+    "captcha_33": {
+        "id": 33,
+        "text": "Жлт56",
+        "success": true,
+        "alternative_text": []
+    },
+    "captcha_34": {
+        "id": 34,
+        "text": "ЖмМТ4т",
+        "success": null,
+        "alternative_text": []
+    },
+    "captcha_35": {
+        "id": 35,
+        "text": "дб>рн",
+        "success": null,
+        "alternative_text": []
+    },
+    "captcha_36": {
+        "id": 36,
+        "text": "ЛТсм8",
+        "success": true,
+        "alternative_text": []
+    },
+    "captcha_37": {
+        "id": 37,
+        "text": "Жсс8",
+        "success": null,
+        "alternative_text": []
+    },
+    "captcha_38": {
+        "id": 38,
+        "text": "17Мб",
+        "success": null,
+        "alternative_text": []
+    },
+    "captcha_39": {
+        "id": 39,
+        "text": "лНВ9М",
+        "success": true,
+        "alternative_text": []
+    },
+    "captcha_40": {
+        "id": 40,
+        "text": "лВткл",
+        "success": null,
+        "alternative_text": []
+    },
+    "captcha_41": {
+        "id": 41,
+        "text": "пиб9Н",
+        "success": null,
+        "alternative_text": []
+    },
+    "captcha_42": {
+        "id": 42,
+        "text": "д8стг8",
+        "success": null,
+        "alternative_text": []
+    },
+    "captcha_43": {
+        "id": 43,
+        "text": "лрипк",
+        "success": null,
+        "alternative_text": []
+    },
+    "captcha_44": {
+        "id": 44,
+        "text": "пСкбб",
+        "success": true,
+        "alternative_text": []
+    },
+    "captcha_45": {
+        "id": 45,
+        "text": "Джалг",
+        "success": null,
+        "alternative_text": []
+    },
+    "captcha_46": {
+        "id": 46,
+        "text": "пн49т",
+        "success": true,
+        "alternative_text": []
+    },
+    "captcha_47": {
+        "id": 47,
+        "text": "Л7Тв5к",
+        "success": null,
+        "alternative_text": []
+    },
+    "captcha_48": {
+        "id": 48,
+        "text": "Л:824",
+        "success": null,
+        "alternative_text": []
+    },
+    "captcha_49": {
+        "id": 49,
+        "text": "ланм",
+        "success": null,
+        "alternative_text": []
+    },
+    "captcha_50": {
+        "id": 50,
+        "text": "Дирдр",
+        "success": null,
+        "alternative_text": []
+    },
+    "captcha_51": {
+        "id": 51,
+        "text": "д2мп8",
+        "success": true,
+        "alternative_text": []
+    },
+    "captcha_52": {
+        "id": 52,
+        "text": "рэНВ",
+        "success": null,
+        "alternative_text": []
+    },
+    "captcha_53": {
+        "id": 53,
+        "text": "ДтПаб",
+        "success": null,
+        "alternative_text": []
+    },
+    "captcha_54": {
+        "id": 54,
+        "text": "лор6бП",
+        "success": null,
+        "alternative_text": []
+    },
+    "captcha_55": {
+        "id": 55,
+        "text": "Д6жпгс",
+        "success": null,
+        "alternative_text": []
+    },
+    "captcha_56": {
+        "id": 56,
+        "text": "ПИ76",
+        "success": null,
+        "alternative_text": []
+    },
+    "captcha_57": {
+        "id": 57,
+        "text": "птп",
+        "success": null,
+        "alternative_text": []
+    },
+    "captcha_58": {
+        "id": 58,
+        "text": "Жбго9",
+        "success": null,
+        "alternative_text": []
+    },
+    "captcha_59": {
+        "id": 59,
+        "text": "ПаАрг4",
+        "success": null,
+        "alternative_text": []
+    },
+    "captcha_60": {
+        "id": 60,
+        "text": "л7тсхж9",
+        "success": null,
+        "alternative_text": []
+    },
+    "captcha_61": {
+        "id": 61,
+        "text": "лсаза",
+        "success": null,
+        "alternative_text": []
+    },
+    "captcha_62": {
+        "id": 62,
+        "text": "д61ж",
+        "success": null,
+        "alternative_text": []
+    },
+    "captcha_63": {
+        "id": 63,
+        "text": "дПНбл",
+        "success": null,
+        "alternative_text": []
+    },
+    "captcha_64": {
+        "id": 64,
+        "text": "Жрбв8",
+        "success": null,
+        "alternative_text": []
+    },
+    "captcha_65": {
+        "id": 65,
+        "text": "ПЕеТпп",
+        "success": null,
+        "alternative_text": []
+    },
+    "captcha_66": {
+        "id": 66,
+        "text": "жвбА7",
+        "success": null,
+        "alternative_text": []
+    },
+    "captcha_67": {
+        "id": 67,
+        "text": "ПВ/дд",
+        "success": null,
+        "alternative_text": []
+    },
+    "captcha_68": {
+        "id": 68,
+        "text": "Лс9тк",
+        "success": null,
+        "alternative_text": []
+    },
+    "captcha_69": {
+        "id": 69,
+        "text": "лббр9",
+        "success": true,
+        "alternative_text": []
+    },
+    "captcha_70": {
+        "id": 70,
+        "text": "\f",
+        "success": null,
+        "alternative_text": []
+    },
+    "captcha_71": {
+        "id": 71,
+        "text": "\f",
+        "success": null,
+        "alternative_text": []
+    },
+    "captcha_72": {
+        "id": 72,
+        "text": "\f",
+        "success": null,
+        "alternative_text": []
+    },
+    "captcha_73": {
+        "id": 73,
+        "text": "\f",
+        "success": null,
+        "alternative_text": []
+    },
+    "captcha_74": {
+        "id": 74,
+        "text": "\f",
+        "success": null,
+        "alternative_text": []
+    },
+    "captcha_75": {
+        "id": 75,
+        "text": "лан",
+        "success": null,
+        "alternative_text": []
+    },
+    "captcha_76": {
+        "id": 76,
+        "text": "л6956",
+        "success": true,
+        "alternative_text": []
+    },
+    "captcha_77": {
+        "id": 77,
+        "text": "жрёвт",
+        "success": false,
+        "alternative_text": []
+    },
+    "captcha_78": {
+        "id": 78,
+        "text": "Дижкб",
+        "success": false,
+        "alternative_text": []
+    },
+    "captcha_79": {
+        "id": 79,
+        "text": "Ж9р7т",
+        "success": false,
+        "alternative_text": []
+    },
+    "captcha_80": {
+        "id": 80,
+        "text": "лно84",
+        "success": false,
+        "alternative_text": []
+    },
+    "captcha_81": {
+        "id": 81,
+        "text": "дтбр1",
+        "success": false,
+        "alternative_text": []
+    },
+    "captcha_82": {
+        "id": 82,
+        "text": "Жартд",
+        "success": false,
+        "alternative_text": []
+    },
+    "captcha_83": {
+        "id": 83,
+        "text": "ЖжНДп",
+        "success": false,
+        "alternative_text": []
+    },
+    "captcha_84": {
+        "id": 84,
+        "text": "Ж75тб",
+        "success": false,
+        "alternative_text": []
+    },
+    "captcha_85": {
+        "id": 85,
+        "text": "ДМЭСс",
+        "success": false,
+        "alternative_text": []
+    },
+    "captcha_86": {
+        "id": 86,
+        "text": "Жлд44",
+        "success": true,
+        "alternative_text": []
+    },
+    "captcha_87": {
+        "id": 87,
+        "text": "179",
+        "success": false,
+        "alternative_text": []
+    },
+    "captcha_88": {
+        "id": 88,
+        "text": "дю9Т",
+        "success": false,
+        "alternative_text": []
+    },
+    "captcha_89": {
+        "id": 89,
+        "text": "ЖИм",
+        "success": false,
+        "alternative_text": []
+    },
+    "captcha_90": {
+        "id": 90,
+        "text": "749тр",
+        "success": false,
+        "alternative_text": []
+    },
+    "captcha_91": {
+        "id": 91,
+        "text": "жс89п",
+        "success": true,
+        "alternative_text": []
+    },
+    "captcha_92": {
+        "id": 92,
+        "text": "пэ1л9",
+        "success": false,
+        "alternative_text": []
+    },
+    "captcha_93": {
+        "id": 93,
+        "text": "жМбн4",
+        "success": true,
+        "alternative_text": []
+    },
+    "captcha_94": {
+        "id": 94,
+        "text": "п&Пбм",
+        "success": false,
+        "alternative_text": []
+    },
+    "captcha_95": {
+        "id": 95,
+        "text": "\f",
+        "success": false,
+        "alternative_text": []
+    },
+    "captcha_96": {
+        "id": 96,
+        "text": "д4с96",
+        "success": true,
+        "alternative_text": []
     }
 }

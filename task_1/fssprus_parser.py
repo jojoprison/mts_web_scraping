@@ -1,4 +1,3 @@
-# TODO сделать парсер через селениум, через обычные реквесты форбидден 403
 import json
 import multiprocessing
 import random
@@ -210,7 +209,7 @@ class ParserFSSP:
         # имитируем нажатие клавиши ENTER
         find_btn.send_keys('\ue007')
 
-        time.sleep(10)
+        time.sleep(4)
 
         # создаем объект пройденной капчи, чтобы после выхода из цикла обозначить ее как решенную УСПЕШНО
         passed_captcha_json = None
@@ -221,40 +220,60 @@ class ParserFSSP:
         while self.captcha_exist():
 
             if captcha_again:
-                # не решили предыдущую капчу, ничего не меняем в json, сохраняем как есть на будущее
+                # не решили предыдущую капчу, обозначаем это в json, сохраняем на будущее
+                passed_captcha_json['success'] = False
                 save_captcha(passed_captcha_json)
 
             passed_captcha_json = self.overcome_captcha()
+
+            # сразу ставим флаг в значение true, чтоб в случае следующего захода в цикл сохранять капчу
+            captcha_again = True
 
         # решили капчу успешно
         passed_captcha_json['success'] = True
         save_captcha(passed_captcha_json)
 
-        # будем парсить html супом
-        soup = BeautifulSoup(self.driver.page_source, "html.parser")
-        # сразу находим тело таблицы с результатом запроса
-        table = soup.find("tbody")
+        parse_page(self.driver.page_source)
 
-        # собираем с таблицы инфу о всех должниках
-        tr_list = table.find_all('tr')
-        # удаляем заголовки, не понадобятся, один раз их увидеть достаточно
-        del tr_list[0]
-        # print(tr_list)
+        print('try to find pagination')
 
-        parse_table(tr_list)
+        # находим блок с пагинацией по страницам, если есть
+        if self.element_exist(By.CLASS_NAME, 'pagination'):
 
-        # TODO сделать переключатель страниц внизу
+            print('found pagination')
+
+            div_pagination = self.driver.find_element_by_class_name('pagination')
+
+            count = 2
+
+            while self.element_exist(By.XPATH, '// a[contains( text(), "Следующая")]'):
+                pagination_button_next = div_pagination.find_element_by_xpath(
+                    '// a[contains( text(), "Следующая")]')
+
+                pagination_button_next.click()
+
+                time.sleep(3)
+
+                print('parsing page: ', count)
+
+                parse_page(self.driver.page_source)
+
+                count += 1
+
         self.wait_and_close_driver()
 
-    def captcha_exist(self):
+    def element_exist(self, search_by, search_pattern):
         try:
-            self.driver.find_element_by_id('captcha-popup')
+            self.driver.find_element(search_by, search_pattern)
             return True
         except NoSuchElementException:
             return False
         except Exception as ex:
             print(ex)
             return False
+
+    def captcha_exist(self):
+        return self.element_exist(By.ID, 'captcha-popup')
 
     # преодолеваем капчу
     def overcome_captcha(self):
@@ -285,15 +304,38 @@ class ParserFSSP:
         print('send enter')
         captcha_text_input.send_keys('\ue007')
 
-        time.sleep(10)
+        time.sleep(4)
 
         return captcha_json
 
 
+def parse_page(page_source):
+    # будем парсить html супом
+    soup = BeautifulSoup(page_source, "html.parser")
+
+    # сразу находим тело таблицы с результатом запроса
+    table = soup.find("tbody")
+
+    # собираем с таблицы инфу о всех должниках
+    tr_list = table.find_all('tr')
+    # удаляем заголовки, не понадобятся, один раз их увидеть достаточно
+    del tr_list[0]
+    # print(tr_list)
+
+    parse_table(tr_list)
+
+
 # TODO пока сюда, потом в другой файл можно засунуть
 def parse_table(tr_list):
+    print(f'start parsing table, table len: {len(tr_list)}')
+    count = 0
 
     for tr_elem in tr_list:
+
+        count += 1
+
+        print(f'parse tr: {count}')
+
         ep_res_dict = parse_tr(tr_elem)
 
         # TODO ЗАМЕНИТЬ, сохранять в excel, на время дебага оставил
@@ -318,7 +360,9 @@ def parse_table(tr_list):
         with open(debtors_json_path, 'w', encoding='utf-8') as json_file:
             json_file.write(parsed_debtors_list_json)
 
-        return f'debtor_saved: {ep_res_dict}'
+        # print(f'debtor_saved: {ep_res_dict}')
+
+    return True
 
 
 def parse_tr(tr_elem):
@@ -343,7 +387,7 @@ def parse_tr(tr_elem):
 
     # исполнительное производство
     enforcement_proceedings = td_list[1]
-    # TODO тут еще в блок try except засунуть над будет
+
     br = enforcement_proceedings.find('br')
     # проверяем, есть ли там графа СД (иногда бывает)
     if br:
@@ -360,13 +404,19 @@ def parse_tr(tr_elem):
 
     # реквизиты исполнительного документа
     executive_document_details = td_list[2]
-    # TODO тут еще в блок try except засунуть над будет
-    # TODO тут может быть 2 br по ходу - проверить
-    br = executive_document_details.find('br')
+    # может быть 2 вида исполнительных доков, соответственно - 2 разделителя
+    br_list = executive_document_details.findAll('br')
 
-    # убираем сразу лишние пробелы
-    ep_res_dict['document_details'] = {'order': str(br.previous),
-                                       'authority': str(br.next)}
+    # выносим в переменную количество видов исполнительных документов по должнику, будем юзать ниже в расчете долга
+    debtor_order_count = len(br_list)
+
+    if debtor_order_count > 1:
+        ep_res_dict['document_details'] = {'order': str(br_list[0].previous),
+                                           'order_2': str(br_list[1].previous),
+                                           'authority': str(br_list[1].next)}
+    else:
+        ep_res_dict['document_details'] = {'order': str(br_list[0].previous),
+                                           'authority': str(br_list[0].next)}
 
     # инфа о дате, причине окончания и прекращения ИП
     ep_end = td_list[3]
@@ -377,14 +427,24 @@ def parse_tr(tr_elem):
         # причина - статья, часть, пункт основания (ст. %, ч. %, п. %)
 
         ep_end_reason_parts = []
+
+        # иногда бывает пишут только статью, в данном случае исключаем поле с датой
+        ep_end_reason_len = len(br_list)
+
         # проходимся 3 раза через разделители, т.к. там три <br/>
-        for i in range(0, 3):
+        for i in range(0, len(br_list)):
             ep_end_reason_parts.append(str(br_list[i].next))
         # джоиним к пробелу, там нет пробелов между частями
         reason = ' '.join(ep_end_reason_parts)
 
+        if ep_end_reason_len > 1:
+            reason_date = str(br_list[0].previous)
+        else:
+            reason_date = None
+
         ep_res_dict['ep_end'] = {'reason': reason,
-                                 'date': str(br_list[0].previous)}
+                                 'date': reason_date}
+
     else:
         ep_res_dict['ep_end'] = {'reason': None,
                                  'date': None}
@@ -392,17 +452,47 @@ def parse_tr(tr_elem):
     # 4 пункт пропускаем - там конпка 'оплатить' на сайте
 
     # инфа о предмете исполнения и сумме непогашенной задолженности
-    # TODO тут по ходу несколько пунктов может быть
-    for_what_how_many = td_list[5].text.split(':')
+    for_what_how_many = td_list[5]
 
-    # если указанна сумма задолженности
-    if len(for_what_how_many) > 1:
-        amount = for_what_how_many[1]
+    if debtor_order_count > 1:
+
+        performance_subject_list = []
+
+        br = for_what_how_many.find('br')
+
+        for_what_how_many_first = br.previous.split(':')
+
+        # если указанна сумма задолженности
+        if len(for_what_how_many_first) > 1:
+            first_amount = for_what_how_many_first[1].strip()
+        else:
+            first_amount = None
+
+        performance_subject_list.append({'name': for_what_how_many_first[0], 'amount': first_amount})
+
+        for_what_how_many_second = br.next.split(':')
+
+        # если указанна сумма задолженности
+        if len(for_what_how_many_second) > 1:
+            second_amount = for_what_how_many_second[1].strip()
+        else:
+            second_amount = None
+
+        performance_subject_list.append({'name': for_what_how_many_second[0], 'amount': second_amount})
+
+        ep_res_dict['performance_subject'] = performance_subject_list
     else:
-        amount = None
 
-    ep_res_dict['performance_subject'] = {'name': for_what_how_many[0],
-                                          'amount': amount}
+        performance_subject_info = for_what_how_many.text.split(':')
+
+        # если указанна сумма задолженности
+        if len(performance_subject_info) > 1:
+            amount = performance_subject_info[1].strip()
+        else:
+            amount = None
+
+        ep_res_dict['performance_subject'] = {'name': performance_subject_info[0],
+                                              'amount': amount}
 
     # инфа об отделе судебных приставов
     department_of_bailiffs = td_list[6]
@@ -410,17 +500,25 @@ def parse_tr(tr_elem):
     # мне конечно не нравится слайс в конце, но юзаю его ввиду торопливости
     # двойные запятые заменяю на одинарные, дабы привести к нормальному виду
     ep_res_dict['department_of_bailiffs'] = {'name': str(br.previous),
-                                             'address': br.next.replace(', ,', ',')[:-2]}
+                                             # тут иногда криво заканчивается строка с адресом, то запятые, то -
+                                             'address': br.next.replace(', ,', ',')}
 
     # инфа о судебном приставе
     bailiff_telephone = td_list[7]
-    try:
-        # если не ловим исключение, идем дальше
-        br = bailiff_telephone.find('br')
-        ep_res_dict['bailiff'] = {'name': str(br.previous), 'phone': str(br.next)}
-    # TODO уточнить какие исключения могут прилетать
-    except:
-        ep_res_dict['bailiff'] = {'name': bailiff_telephone.text, 'phone': None}
+
+    # в любом случае будет, там телефон в тег <b> засовывается
+    br = bailiff_telephone.find('br')
+
+    # вытаскиваем из текст из тега болд, в нем хранится наш заветный номер телефона пристава
+    phone_number = str(br.next.next).replace('\n', '')
+
+    # проверяем на пустоту
+    if phone_number:
+        phone = phone_number
+    else:
+        phone = None
+
+    ep_res_dict['bailiff'] = {'name': str(br.previous), 'phone': phone}
 
     return ep_res_dict
 
@@ -467,4 +565,4 @@ if __name__ == '__main__':
 # <td class="">ЧИСТОБАЕВА С. Х.<br/><b></b></td>
 # </tr>'''
 
-    # parse_tr(tr)
+# parse_tr(tr)

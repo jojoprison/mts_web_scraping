@@ -6,7 +6,7 @@ try:
     from PIL import Image, ImageDraw, ImageOps, ImageEnhance
 except ImportError:
     import Image, ImageOps, ImageEnhance, imread
-# TODO чтоб работал тессеракт, нужно установить 5 версию с https://github.com/UB-Mannheim/tesseract/wiki
+# TODO чтоб работал тессеракт, нужно установить 5 (альфа) версию с https://github.com/UB-Mannheim/tesseract/wiki
 import pytesseract
 from utility.paths import get_project_root_path
 
@@ -68,9 +68,11 @@ def solve_captcha():
 
     # разгадываем капчу с помощью тессеракта
     text = pytesseract.image_to_string(Image.open(img_file_name), lang='rus')
-    # срезаем последний символ в капче (он при каждой конвертации вылазит  - '\x0c')
+    # срезаем последний символ в капче (он при каждой конвертации вылазит  - '\x0c' - FF)
     # убираем все пробелы - иногда вылазят
     # TODO сделать проверку на число символов - иногда 4, иногда 6
+    # TODO проверять на символы типа ) и @, иногда вылазят
+    # TODO думаю не сохранять картинки, чтобы не разрастался проект - достаточно джсонов
     res_text = text.split('\n')[0].replace(' ', '')
 
     # сам текст капчи
@@ -81,28 +83,6 @@ def solve_captcha():
     captcha_json['alternative_text'] = list()
 
     return captcha_json
-
-
-# баловался с изменениями оттенков изображения - оттенки серого
-# TODO delete
-def greyscale_pixels():
-    img = Image.open('res.png')
-    draw = ImageDraw.Draw(img)
-
-    width = img.size[0]
-    height = img.size[1]
-
-    pix = img.load()
-
-    for x in range(width):
-        for y in range(height):
-            r, g, b = pix[x, y]
-
-            S = (r * 30 + g * 59 + b * 11) // 100
-
-            draw.point((x, y), (S, S, S))
-
-    img.save('result.jpg', 'JPEG')
 
 
 def save_captcha(captcha_json):
@@ -123,6 +103,7 @@ def save_captcha(captcha_json):
     return f'captcha_saved: {captcha_json}'
 
 
+# TODO чтобы джсона с капчами доставать по тексту уже попадавшуюся - проверять наличие
 def get_captcha(captcha_text):
     captcha_list_json = _get_captcha_list_json()
 
