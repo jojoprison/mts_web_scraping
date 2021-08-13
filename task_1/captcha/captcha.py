@@ -69,7 +69,9 @@ def solve_captcha():
     # разгадываем капчу с помощью тессеракта
     text = pytesseract.image_to_string(Image.open(img_file_name), lang='rus')
     # срезаем последний символ в капче (он при каждой конвертации вылазит  - '\x0c')
-    res_text = text.split('\n')[0]
+    # убираем все пробелы - иногда вылазят
+    # TODO сделать проверку на число символов - иногда 4, иногда 6
+    res_text = text.split('\n')[0].replace(' ', '')
 
     # сам текст капчи
     captcha_json['text'] = res_text
