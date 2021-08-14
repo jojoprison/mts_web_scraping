@@ -18,8 +18,9 @@ import requests
 from utility.paths import get_project_root_path
 from utility.proxy.proxy import parse, random_proxy
 from utility.user_agent import save_user_agent, get_user_agent
-from excel import ffsp_get_debtors_to_check
 from captcha.captcha import solve_captcha, get_captcha_img, save_captcha
+from excel import save_to_json, clear_json_file, get_debtors_json
+from excel import FSSP
 
 
 class ParserFSSP:
@@ -179,7 +180,7 @@ class ParserFSSP:
 
         return title
 
-    def check_person(self, second_name, first_name, third_name, birth_date):
+    def check_person(self, second_name, first_name, third_name=None, birth_date=None):
 
         self.driver.get(self.site_url)
 
@@ -203,7 +204,13 @@ class ParserFSSP:
         second_name_input = self.driver.find_element_by_id('input02')
         second_name_input.send_keys(first_name)
 
-        # TODO вставить отчество и ДР
+        if third_name:
+            third_name_input = self.driver.find_element_by_id('input05')
+            third_name_input.send_keys(third_name)
+
+        if birth_date:
+            birth_date_input = self.driver.find_element_by_id('input06')
+            birth_date_input.send_keys(birth_date)
 
         find_btn = self.driver.find_element_by_id('btn-sbm')
         # имитируем нажатие клавиши ENTER
@@ -248,6 +255,13 @@ class ParserFSSP:
                 parse_page(self.driver.page_source)
 
                 count += 1
+
+        # обновляем excel файл со спарсенными должниками
+        # TODO продумать хрень чтобы не записывать каждое имя в отдельный лист, поставить ограничитель
+        FSSP().save_checked_debtors(get_debtors_json())
+
+        # очищаем json с должниками, чтобы туда потом новых засунуть
+        clear_json_file()
 
         # закрывем браузер чтоб избавиться от процесса
         self.wait_and_close_driver()
@@ -327,7 +341,7 @@ class ParserFSSP:
         print('send enter')
         captcha_text_input.send_keys('\ue007')
 
-        time.sleep(4)
+        time.sleep(7)
 
         return captcha_json
 
@@ -348,7 +362,6 @@ def parse_page(page_source):
     parse_table(tr_list)
 
 
-# TODO пока сюда, потом в другой файл можно засунуть
 def parse_table(tr_list):
     print(f'start parsing table, table len: {len(tr_list)}')
     count = 0
@@ -361,27 +374,8 @@ def parse_table(tr_list):
 
         ep_res_dict = parse_tr(tr_elem)
 
-        # TODO ЗАМЕНИТЬ, сохранять в excel, на время дебага оставил
-        debtors_json_path = f'{get_project_root_path()}/task_1/parsed_debtors.json'
-
-        with open(debtors_json_path, encoding='utf-8') as parsed_debtors_json_file:
-            parsed_debtors_json_data = parsed_debtors_json_file.read()
-
-        if parsed_debtors_json_data:
-            parsed_debtors_json = json.loads(parsed_debtors_json_data)
-        else:
-            parsed_debtors_json = None
-
-        if parsed_debtors_json:
-            parsed_debtors_json[f'debtor_{len(parsed_debtors_json) + 1}'] = ep_res_dict
-        else:
-            parsed_debtors_json = {'debtor_1': ep_res_dict}
-
-        parsed_debtors_list_json = json.dumps(parsed_debtors_json,
-                                              ensure_ascii=False, indent=4)
-
-        with open(debtors_json_path, 'w', encoding='utf-8') as json_file:
-            json_file.write(parsed_debtors_list_json)
+        # на всякий случай сохраняем в json только что проверенных
+        save_to_json(ep_res_dict)
 
         # print(f'debtor_saved: {ep_res_dict}')
 
