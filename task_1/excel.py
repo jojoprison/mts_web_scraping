@@ -86,8 +86,6 @@ class FSSP_excel():
             # book = excel.Workbooks.open(r'checked_debtors.xlsx')
             wb_data = excel.Workbooks.Open(excel_file)
 
-            # TODO проверять скок строк - если больше 1000 - делаем новый файл
-
             # сколько уже листов есть в файле
             sheet_count = wb_data.Worksheets.Count
 
@@ -233,7 +231,7 @@ class FSSP_excel():
                 #
                 #     for debtor_part in debtor.values():
                 #
-                #         # TODO мб надо по кейсам идти)
+                #         # TODO мб надо по ключам идти)
                 #
                 #         # print(debtor_part)
                 #         # print(type(debtor_part))

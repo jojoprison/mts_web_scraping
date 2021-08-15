@@ -187,7 +187,6 @@ class ParserFSSP:
 
         print(person)
 
-        # TODO мб еще порезать строку, там всякие гет параметры могут вылезти
         if self.driver.current_url != self.site_url:
             self.driver.get(self.site_url)
 
@@ -603,6 +602,7 @@ def parse_tr(tr_elem):
     return ep_res_dict
 
 
+# TODO мультипроцессы на будущее
 def parse_massive():
     list_org = ParserFSSP()
 
@@ -626,28 +626,4 @@ def parse_massive():
 
 if __name__ == '__main__':
     parser = ParserFSSP()
-
-    # persons = excel_pywin32()
-
-    # parser.check_person(persons[0].get('first_name'), persons[0].get('second_name'),
-    #                     persons[0].get('third_name'), persons[0].get('birth_date'))
-
-    temp_person = {'second_name': 'Иванов', 'first_name': 'Илья', 'third_name': 'Владимирович',
-                   'birth_date': '03.05.1981'}
-
-    # parser.check_person(temp_person)
-
     parser.run_excel_persons()
-
-#     tr = '''<tr class="">
-# <td class="first">ИВАНОВ ИЛЬЯ ВЛАДИМИРОВИЧ <br/>03.05.1981 <br/>142100,  РОССИЯ,  МОСКОВСКАЯ ОБЛ.,  Г. ПОДОЛЬСК</td>
-# <td class="">11057/21/50032-ИП от 01.02.2021 <br/>153243/20/50032-СД</td>
-# <td class="">Судебный приказ от 28.04.2018 № 2-565/2018<br/>СУДЕБНЫЙ УЧАСТОК № 190 МИРОВОГО СУДЬИ ПОДОЛЬСКОГО СУДЕБНОГО РАЙОНА МОСКОВСКОЙ ОБЛАСТИ</td>
-# <td class="">15.04.2021<br/>ст. 46<br/>ч. 1<br/>п. 3</td>
-# <td class=""><script type="text/javascript">window["_ipServices"] = {"receipt":{"title":"Квитанция","hide_title":true,"banner":"form.svg","subtitle":"<br>Квитанция","url":"https://is.fssp.gov.ru/get_receipt/?receipt="},"epgu":{"title":"Оплата через ЕПГУ","hide_title":true,"url":"https://is.fssp.gov.ru/pay/?service=epgu&pay=","banner":"pay_gos.svg","subtitle":"<br>Оплата любыми картами"}};</script></td>
-# <td class="">Иные взыскания имущественного характера в пользу физических и юридических лиц<br/></td>
-# <td class="">Подольский РОСП ГУФССП России по Московской области<br/>142100, Россия, Московская  обл., , г. Подольск, , ул. Курская, д. 6, , </td>
-# <td class="">ЧИСТОБАЕВА С. Х.<br/><b></b></td>
-# </tr>'''
-
-# parse_tr(tr)

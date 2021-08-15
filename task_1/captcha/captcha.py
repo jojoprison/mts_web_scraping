@@ -6,7 +6,6 @@ try:
     from PIL import Image, ImageDraw, ImageOps, ImageEnhance
 except ImportError:
     import Image, ImageOps, ImageEnhance, imread
-# TODO чтоб работал тессеракт, нужно установить 5 (альфа) версию с https://github.com/UB-Mannheim/tesseract/wiki
 import pytesseract
 from utility.paths import get_project_root_path
 
