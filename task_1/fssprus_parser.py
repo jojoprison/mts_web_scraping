@@ -10,6 +10,7 @@ from selenium import webdriver
 from selenium.common.exceptions import TimeoutException, SessionNotCreatedException, NoSuchElementException
 from selenium.webdriver.chrome.options import Options as ChromeOptions
 from selenium.webdriver.common.by import By
+from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.firefox.options import Options as FirefoxOptions
 from webdriver_manager.chrome import ChromeDriverManager
 from webdriver_manager.firefox import GeckoDriverManager
@@ -20,13 +21,15 @@ from utility.proxy.proxy import parse, random_proxy
 from utility.user_agent import save_user_agent, get_user_agent
 from captcha.captcha import solve_captcha, get_captcha_img, save_captcha
 from excel import save_to_json, clear_json_file, get_debtors_json
-from excel import FSSP
+from excel import FSSP_excel
 
 
 class ParserFSSP:
     site_url = 'https://fssp.gov.ru/iss/ip'
     user_agent = None
     proxy_str = None
+    # класс для работы с экселем
+    fssp_excel = FSSP_excel()
 
     def __init__(self, proxy=None):
 
@@ -180,9 +183,13 @@ class ParserFSSP:
 
         return title
 
-    def check_person(self, second_name, first_name, third_name=None, birth_date=None):
+    def check_person(self, person):
 
-        self.driver.get(self.site_url)
+        print(person)
+
+        # TODO мб еще порезать строку, там всякие гет параметры могут вылезти
+        if self.driver.current_url != self.site_url:
+            self.driver.get(self.site_url)
 
         time.sleep(2)
 
@@ -198,27 +205,60 @@ class ParserFSSP:
 
         time.sleep(1)
 
-        first_name_input = self.driver.find_element_by_id('input01')
-        first_name_input.send_keys(second_name)
+        second_name_input = self.driver.find_element_by_id('input01')
+        second_name_input.clear()
 
-        second_name_input = self.driver.find_element_by_id('input02')
-        second_name_input.send_keys(first_name)
+        for symbol in person['second_name']:
+            second_name_input.send_keys(symbol)
+            time.sleep(0.5)
 
-        if third_name:
-            third_name_input = self.driver.find_element_by_id('input05')
-            third_name_input.send_keys(third_name)
+        time.sleep(2)
 
-        if birth_date:
-            birth_date_input = self.driver.find_element_by_id('input06')
-            birth_date_input.send_keys(birth_date)
+        first_name_input = self.driver.find_element_by_id('input02')
+        first_name_input.clear()
+
+        for symbol in person['first_name']:
+            first_name_input.send_keys(symbol)
+            time.sleep(0.5)
+
+        time.sleep(2)
+
+        third_name_input = self.driver.find_element_by_id('input05')
+        third_name_input.clear()
+
+        if person['third_name']:
+
+            for symbol in person['third_name']:
+                third_name_input.send_keys(symbol)
+                time.sleep(0.5)
+
+            time.sleep(2)
+
+        birth_date_input = self.driver.find_element_by_id('input06')
+        birth_date_input.clear()
+
+        if person['birth_date']:
+
+            birth_date_input.send_keys(person['birth_date'])
+
+            # с датой не работает такое
+            # for symbol in person['birth_date']:
+            #     birth_date_input.send_keys(symbol)
+            #     time.sleep(0.5)
+
+            time.sleep(2)
 
         find_btn = self.driver.find_element_by_id('btn-sbm')
         # имитируем нажатие клавиши ENTER
-        find_btn.send_keys('\ue007')
+        # find_btn.send_keys('\ue007')
+        find_btn.send_keys(Keys.RETURN)
 
         time.sleep(4)
 
         self.captcha_handler()
+
+        # очищаем json с должниками, чтобы туда потом новых засунуть
+        clear_json_file()
 
         parse_page(self.driver.page_source)
 
@@ -256,15 +296,10 @@ class ParserFSSP:
 
                 count += 1
 
-        # обновляем excel файл со спарсенными должниками
-        # TODO продумать хрень чтобы не записывать каждое имя в отдельный лист, поставить ограничитель
-        FSSP().save_checked_debtors(get_debtors_json())
+        # обновляем excel файл со спарсенными должниками, все сохраненне данные лежат в json файле
+        save_result = self.fssp_excel.save_checked_debtors(get_debtors_json())
 
-        # очищаем json с должниками, чтобы туда потом новых засунуть
-        clear_json_file()
-
-        # закрывем браузер чтоб избавиться от процесса
-        self.wait_and_close_driver()
+        print(save_result)
 
     def element_exist(self, search_by, search_pattern):
         try:
@@ -329,37 +364,60 @@ class ParserFSSP:
         print(captcha_json)
         captcha_text = captcha_json['text']
 
-        print('send keys')
+        print('captcha send keys')
         captcha_text_input = self.driver.find_element_by_id('captcha-popup-code')
 
         # вбиваем текст капчи посимвольно, чтоб не палиться, будто мы человек
         for symb in captcha_text:
             captcha_text_input.send_keys(symb)
-            time.sleep(1)
+            time.sleep(0.5)
 
         # имитируем нажатие клавиши ENTER
-        print('send enter')
-        captcha_text_input.send_keys('\ue007')
+        print('captcha send enter')
+        # captcha_text_input.send_keys('\ue007')
+        captcha_text_input.send_keys(Keys.RETURN)
 
-        time.sleep(7)
+        time.sleep(random.choice([4, 6]))
 
         return captcha_json
+
+    def run_excel_persons(self):
+        person_list = self.fssp_excel.get_debtors_to_check()
+
+        for person in person_list:
+            self.check_person(person)
+
+        # закрывем браузер чтоб избавиться от процесса
+        self.wait_and_close_driver()
 
 
 def parse_page(page_source):
     # будем парсить html супом
     soup = BeautifulSoup(page_source, "html.parser")
 
-    # сразу находим тело таблицы с результатом запроса
-    table = soup.find("tbody")
+    # находим блок с результатом поиска
+    div_results = soup.find('div', attrs={'class': 'results'})
 
-    # собираем с таблицы инфу о всех должниках
-    tr_list = table.find_all('tr')
-    # удаляем заголовки, не понадобятся, один раз их увидеть достаточно
-    del tr_list[0]
-    # print(tr_list)
+    # проверяем, нашлось ли вообще что-то
+    # такой контейнер с классом появляется только в случае, если нет результатов
+    if not div_results.find('div', attrs={'class': 'b-search-message'}):
 
-    parse_table(tr_list)
+        # сразу находим тело таблицы с результатом запроса
+        table = soup.find("tbody")
+
+        # собираем с таблицы инфу о всех должниках
+        tr_list = table.find_all('tr')
+        # удаляем заголовки, не понадобятся, один раз их увидеть достаточно
+        del tr_list[0]
+        # print(tr_list)
+
+        parse_table(tr_list)
+
+        return True
+    else:
+        # хочу подумать тута
+        time.sleep(3)
+        return False
 
 
 def parse_table(tr_list):
@@ -367,7 +425,6 @@ def parse_table(tr_list):
     count = 0
 
     for tr_elem in tr_list:
-
         count += 1
 
         print(f'parse tr: {count}')
@@ -575,7 +632,12 @@ if __name__ == '__main__':
     # parser.check_person(persons[0].get('first_name'), persons[0].get('second_name'),
     #                     persons[0].get('third_name'), persons[0].get('birth_date'))
 
-    parser.check_person('Иванов', 'Илья', 'Владимирович', '03.05.1981')
+    temp_person = {'second_name': 'Иванов', 'first_name': 'Илья', 'third_name': 'Владимирович',
+                   'birth_date': '03.05.1981'}
+
+    # parser.check_person(temp_person)
+
+    parser.run_excel_persons()
 
 #     tr = '''<tr class="">
 # <td class="first">ИВАНОВ ИЛЬЯ ВЛАДИМИРОВИЧ <br/>03.05.1981 <br/>142100,  РОССИЯ,  МОСКОВСКАЯ ОБЛ.,  Г. ПОДОЛЬСК</td>
