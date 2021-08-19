@@ -66,7 +66,8 @@ def solve_captcha():
     img.save(img_file_name)
 
     # разгадываем капчу с помощью тессеракта
-    text = pytesseract.image_to_string(Image.open(img_file_name), lang='rus')
+    text = pytesseract.image_to_string(Image.open(img_file_name), lang='rus',
+                                       config='--psm 6 --oem 3')
     # срезаем последний символ в капче (он при каждой конвертации вылазит  - '\x0c' - FF)
     # убираем все пробелы - иногда вылазят
     # TODO сделать проверку на число символов - иногда 4, иногда 6
