@@ -249,7 +249,6 @@ class ParserFSSP:
 
         find_btn = self.driver.find_element_by_id('btn-sbm')
         # имитируем нажатие клавиши ENTER
-        # find_btn.send_keys('\ue007')
         find_btn.send_keys(Keys.RETURN)
 
         time.sleep(4)
@@ -366,14 +365,11 @@ class ParserFSSP:
         print('captcha send keys')
         captcha_text_input = self.driver.find_element_by_id('captcha-popup-code')
 
-        # вбиваем текст капчи посимвольно, чтоб не палиться, будто мы человек
-        for symb in captcha_text:
-            captcha_text_input.send_keys(symb)
-            time.sleep(0.5)
+        # вбиваем капчу
+        captcha_text_input.send_keys(captcha_text)
 
         # имитируем нажатие клавиши ENTER
         print('captcha send enter')
-        # captcha_text_input.send_keys('\ue007')
         captcha_text_input.send_keys(Keys.RETURN)
 
         time.sleep(random.choice([4, 6]))
@@ -600,28 +596,6 @@ def parse_tr(tr_elem):
     ep_res_dict['bailiff'] = {'name': str(br.previous), 'phone': phone}
 
     return ep_res_dict
-
-
-# TODO мультипроцессы на будущее
-def parse_massive():
-    list_org = ParserFSSP()
-
-    cursor = list_org.con.cursor()
-
-    # TODO подумать, оставлять ли (нужна БД или нет)
-    cursor.execute('SELECT ogrn FROM companies LIMIT 10')
-    ogrn_list = cursor.fetchall()
-
-    ogrn_list = [ogrn[0] for ogrn in ogrn_list]
-    print(ogrn_list)
-
-    pool = multiprocessing.Pool(processes=4)
-
-    pool_res = pool.map(list_org.update_company_by_ogrn, ogrn_list)
-
-    list_org.con.commit()
-
-    print(pool_res)
 
 
 if __name__ == '__main__':

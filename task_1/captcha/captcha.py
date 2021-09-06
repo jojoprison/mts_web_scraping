@@ -39,7 +39,6 @@ def get_captcha_img(captcha_src_base64):
 
 
 # разгадываем капчу
-# TODO !!! сделать проверку по существующим капчам из json и подставлять другие значения символов или убирать лишние
 def solve_captcha():
     # открываем картинку с капчей, конвертируем в RGB формат
     img = Image.open(NEW_CAPTCHA_PATH).convert('RGB')
@@ -51,7 +50,6 @@ def solve_captcha():
     captcha_json = dict()
 
     # получаем айдишник новой капчи
-    # TODO сделать бд SQLite чтобы нормально забирать айдишник, а не хранить все в json
     captcha_last_id = get_captcha_last_id()
     if captcha_last_id:
         captcha_id = get_captcha_last_id() + 1
@@ -70,9 +68,6 @@ def solve_captcha():
                                        config='--psm 6 --oem 3')
     # срезаем последний символ в капче (он при каждой конвертации вылазит  - '\x0c' - FF)
     # убираем все пробелы - иногда вылазят
-    # TODO сделать проверку на число символов - иногда 4, иногда 6
-    # TODO проверять на символы типа ) и @, иногда вылазят
-    # TODO думаю не сохранять картинки, чтобы не разрастался проект - достаточно джсонов
     res_text = text.split('\n')[0].replace(' ', '')
 
     # сам текст капчи
@@ -88,7 +83,6 @@ def solve_captcha():
 def save_captcha(captcha_json):
     captcha_list_json = _get_captcha_list_json()
 
-    # TODO переписать под общий код с пометкой mode='captcha', 'user_agent', добавить дату
     if captcha_list_json:
         captcha_list_json[f'captcha_{captcha_json["id"]}'] = captcha_json
     else:
@@ -103,17 +97,6 @@ def save_captcha(captcha_json):
     return f'captcha_saved: {captcha_json}'
 
 
-# TODO чтобы джсона с капчами доставать по тексту уже попадавшуюся - проверять наличие
-def get_captcha(captcha_text):
-    captcha_list_json = _get_captcha_list_json()
-
-    if not captcha_list_json:
-        return None
-    else:
-        # TODO непонятно вообще куда ретернит список значений, доделать
-        captcha_list_json.values()
-
-
 def get_captcha_last_id():
     captcha_list_json = _get_captcha_list_json()
 
@@ -123,7 +106,6 @@ def get_captcha_last_id():
         captcha_id_list = list(captcha_list_json.keys())
 
     # обрезаем первое слово, там точно будет 'captcha'
-
     return int(captcha_id_list[-1].split('captcha_')[-1])
 
 

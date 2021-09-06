@@ -94,7 +94,6 @@ def free_proxy_list():
     return result_proxy_list
 
 
-# TODO пробнуть хранить в json
 # запускать периодически чтоб обновлять лист проксей
 def save_to_file():
     filename = FREE_FILENAME
@@ -231,15 +230,6 @@ def test_request(proxy_str):
         try:
             req = requests.get(url, proxies=proxies, timeout=15)
 
-            # проверяю айпишник с сайта
-            # bs = BeautifulSoup(req.text, 'html.parser')
-            #
-            # ip_addr = bs.find('b', string='IP Address')
-            # print('ip: ', ip_addr.parent.text.split(' ')[-1])
-            #
-            # forwarder = bs.find('b', string='X-Forwarded-For')
-            # print('forwarder: ', forwarder.parent.parent.find_all('td')[-1].text)
-
             write_proxy_file(proxy, WORKING_FILENAME)
 
             if req.status_code == 200:
@@ -260,14 +250,6 @@ def test_proxies():
     proxy_list = get_proxy_list(working=False)
     print(len(proxy_list))
 
-    # downloader = multiprocessing.Process(target=get_req, args=(proxies,))
-    # downloader.start()
-    #
-    # timeout = 10
-    # time.sleep(timeout)
-    #
-    # downloader.terminate()
-
     # будет открыто максимум 2 процесса, остальные будут открыты после завершения предыдущих
     pool = multiprocessing.Pool(processes=50)
 
@@ -275,21 +257,7 @@ def test_proxies():
     clear_res = [proxy for proxy in pool_res if proxy]
 
     return clear_res
-    # result = pool.apply_async(get_req, (proxy_list[0],))
-
-    # try:
-    #     res = result.get(timeout=10)
-    #     print(res)
-    # except (ProxyError, multiprocessing.context.TimeoutError) as ex:
-    #     print('FUICK')
-    #     print(ex)
 
 
 if __name__ == '__main__':
     get_new_proxies()
-
-    # res = test_proxies()
-    # print(len(res))
-    # print(res)
-
-    # save_to_file()

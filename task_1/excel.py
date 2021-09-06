@@ -65,7 +65,7 @@ class FSSP_excel():
 
             persons.append(person)
 
-        # не помню зачем тру оставил
+        # надо, чтоб корректно закрывал лист
         wb_data.Close(True)
 
         excel.Quit()
@@ -334,35 +334,3 @@ def clear_json_file():
     f.close()
 
     return True
-
-
-# не юзаем эту либу
-# def generate_excel():
-#     df = pd.DataFrame({'Фамилия': ['fuck', 'skasd'],
-#                        'Имя': ['Вася', 'Леха'],
-#                        'Отчество': ['Максимович', 'Андреевич'],
-#                        'Дата рождения': ['2019-07-12', '2020-07-12']})
-#
-#     df.to_excel('./template_1.xlsx', sheet_name='Первый', index=False)
-
-
-# не юзаем эту либу
-# def read_excel():
-#     people_list = pd.read_excel('./template_1.xlsx', index_col='Фамилия')
-#     print(people_list.head())
-
-
-if __name__ == '__main__':
-    # generate_excel()
-
-    # read_excel()
-
-    # fssp = FSSP_excel()
-
-    # fssp.ffsp_get_debtors_to_check()
-
-    # fssp.save_checked_debtors({'temp': None})
-
-    do = datetime.datetime.strptime('1991-07-14 00:00:00+00:00', '%Y-%m-%d %H:%M:%S%z')
-    print(do)
-    print(do.strftime("%d.%m.%Y"))

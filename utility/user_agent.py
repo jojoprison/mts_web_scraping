@@ -46,6 +46,3 @@ def _get_user_agent_json():
 
 if __name__ == '__main__':
     print(save_user_agent('asda'))
-
-    # user_agent = get_user_agent()
-    # print(user_agent)
